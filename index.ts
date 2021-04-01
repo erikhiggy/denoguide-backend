@@ -30,7 +30,7 @@ const formatListDateTime = (dateTime: string): string => {
   return `${date}, ${time}`;
 };
 
-const getShows = async () => {
+const getShows = async (stationID: string) => {
   const decoder = new TextDecoder('utf-8');
   const data = await Deno.readFile('./mocks/newShows.json');
   return JSON.parse(decoder.decode(data)).map((obj: Show) => {
@@ -38,7 +38,8 @@ const getShows = async () => {
       name: obj.name,
       showName: obj.showName,
       listDateTime: formatListDateTime(obj.listDateTime),
-      description: obj.description
+      description: obj.description,
+      stationID
     }
   });
 };
@@ -65,9 +66,11 @@ router
     ctx.response.body = "base route";
     console.log('/', ctx.response.status);
   })
-  .get("/shows", async (ctx) => {
-    ctx.response.body = await getShows();
-    console.log('/shows', ctx.response.status);
+  .get("/shows/:stationID", async (ctx) => {
+    if (ctx?.params?.stationID) {
+      ctx.response.body = await getShows(ctx.params.stationID);
+    }
+    console.log(`/shows/${ctx.params.stationID}`, ctx.response.status);
   })
   .get("/stations", async (ctx) => {
     ctx.response.body = await getStations();
