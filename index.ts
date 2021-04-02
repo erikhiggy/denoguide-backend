@@ -1,4 +1,12 @@
 import { Application, Router } from "https://deno.land/x/oak@v6.5.0/mod.ts";
+import { parse } from 'https://deno.land/std/flags/mod.ts';
+import { config } from "https://deno.land/x/dotenv/mod.ts";
+
+const { API_KEY } = config();
+
+const { args } = Deno;
+const DEFAULT_PORT = 8000;
+const argPort = parse(args).port;
 
 type Station = {
   callsign: string,
@@ -31,9 +39,14 @@ const formatListDateTime = (dateTime: string): string => {
 };
 
 const getShows = async (stationID: string) => {
-  const decoder = new TextDecoder('utf-8');
-  const data = await Deno.readFile('./mocks/newShows.json');
-  return JSON.parse(decoder.decode(data)).map((obj: Show) => {
+  const response = await fetch(`http://api.tvmedia.ca/tv/v4/lineups/36617/listings?
+  api_key=${API_KEY}
+  &timezone=America%2FNew_York
+  &station=${stationID}
+  &newShowsOnly=true
+`);
+  const data = await response.json();
+  return data.map((obj: Show) => {
     return {
       name: obj.name,
       showName: obj.showName,
@@ -45,9 +58,9 @@ const getShows = async (stationID: string) => {
 };
 
 const getStations = async () => {
-  const decoder = new TextDecoder('utf-8');
-  const data = await Deno.readFile('./mocks/lineups.json');
-  return JSON.parse(decoder.decode(data))
+    const response = await fetch(`http://api.tvmedia.ca/tv/v4/lineups/36617?api_key=${API_KEY}`);
+    const data = await response.json();
+    return data
     .stations
     .map((obj: Station) => {
     return {
@@ -87,5 +100,5 @@ app.addEventListener("listen", ({ hostname, port, secure }) => {
   );
 });
 
-await app.listen({ port: 8000 });
+await app.listen({ port: argPort ? Number(argPort) : DEFAULT_PORT });
 
