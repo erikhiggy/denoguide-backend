@@ -38,7 +38,7 @@ const formatListDateTime = (dateTime: string): string => {
 };
 
 const getShows = async (stationID: string) => {
-  const showsUrl = `http://api.tvmedia.ca/tv/v4/lineups/36617/listings?
+  const showsUrl = `https://api.tvmedia.ca/tv/v4/lineups/36617/listings?
   api_key=${API_KEY}
   &timezone=America%2FNew_York
   &station=${stationID}
@@ -58,7 +58,7 @@ const getShows = async (stationID: string) => {
 };
 
 const getStations = async () => {
-    const stationsUrl = `http://api.tvmedia.ca/tv/v4/lineups/36617?api_key=${API_KEY}`;
+    const stationsUrl = `https://api.tvmedia.ca/tv/v4/lineups/36617?api_key=${API_KEY}`;
     console.log('stationsURL', stationsUrl);
     const response = await fetch(stationsUrl);
     const data = await response.json();
