@@ -98,6 +98,7 @@ app.addEventListener("listen", ({ hostname, port, secure }) => {
     `Listening on: ${secure ? "https://" : "http://"}${hostname ??
     "localhost"}:${port}`,
   );
+  console.log('API_KEY:', API_KEY);
 });
 
 await app.listen({ port: argPort ? Number(argPort) : DEFAULT_PORT });
