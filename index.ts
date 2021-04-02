@@ -1,8 +1,7 @@
 import { Application, Router } from "https://deno.land/x/oak@v6.5.0/mod.ts";
 import { parse } from 'https://deno.land/std/flags/mod.ts';
-import { config } from "https://deno.land/x/dotenv/mod.ts";
 
-const { API_KEY } = config();
+const API_KEY = Deno.env.get("API_KEY");
 
 const { args } = Deno;
 const DEFAULT_PORT = 8000;
@@ -98,7 +97,6 @@ app.addEventListener("listen", ({ hostname, port, secure }) => {
     `Listening on: ${secure ? "https://" : "http://"}${hostname ??
     "localhost"}:${port}`,
   );
-  console.log('API_KEY:', API_KEY);
 });
 
 await app.listen({ port: argPort ? Number(argPort) : DEFAULT_PORT });
