@@ -38,12 +38,13 @@ const formatListDateTime = (dateTime: string): string => {
 };
 
 const getShows = async (stationID: string) => {
-  const response = await fetch(`http://api.tvmedia.ca/tv/v4/lineups/36617/listings?
+  const showsUrl = `http://api.tvmedia.ca/tv/v4/lineups/36617/listings?
   api_key=${API_KEY}
   &timezone=America%2FNew_York
   &station=${stationID}
   &newShowsOnly=true
-`);
+`
+  const response = await fetch(showsUrl);
   const data = await response.json();
   return data.map((obj: Show) => {
     return {
@@ -57,7 +58,9 @@ const getShows = async (stationID: string) => {
 };
 
 const getStations = async () => {
-    const response = await fetch(`http://api.tvmedia.ca/tv/v4/lineups/36617?api_key=${API_KEY}`);
+    const stationsUrl = `http://api.tvmedia.ca/tv/v4/lineups/36617?api_key=${API_KEY}`;
+    console.log('stationsURL', stationsUrl);
+    const response = await fetch(stationsUrl);
     const data = await response.json();
     return data
     .stations
@@ -97,7 +100,6 @@ app.addEventListener("listen", ({ hostname, port, secure }) => {
     `Listening on: ${secure ? "https://" : "http://"}${hostname ??
     "localhost"}:${port}`,
   );
-  console.log('API_KEY:', API_KEY);
 });
 
 await app.listen({ port: argPort ? Number(argPort) : DEFAULT_PORT });
