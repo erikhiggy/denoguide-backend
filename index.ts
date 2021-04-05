@@ -59,7 +59,6 @@ const getShows = async (stationID: string) => {
 
 const getStations = async () => {
     const stationsUrl = `https://api.tvmedia.ca/tv/v4/lineups/36617?api_key=${API_KEY}`;
-    console.log('stationsURL', stationsUrl);
     const response = await fetch(stationsUrl);
     const data = await response.json();
     return data
