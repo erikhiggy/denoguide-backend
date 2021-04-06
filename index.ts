@@ -1,5 +1,6 @@
 import { Application, Router } from "https://deno.land/x/oak@v6.5.0/mod.ts";
 import { parse } from 'https://deno.land/std/flags/mod.ts';
+import { oakCors } from "https://deno.land/x/cors/mod.ts";
 
 const API_KEY = Deno.env.get("API_KEY");
 
@@ -91,8 +92,9 @@ router
     console.log('/stations', ctx.response.status);
   })
 
-app.use(router.routes());
+app.use(oakCors({ origin: "*" }),);
 app.use(router.allowedMethods());
+app.use(router.routes());
 
 app.addEventListener("listen", ({ hostname, port, secure }) => {
   console.log(
