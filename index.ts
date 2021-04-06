@@ -6,6 +6,21 @@ const { args } = Deno;
 const DEFAULT_PORT = 8000;
 const argPort = parse(args).port;
 
+type Listing = {
+  airdate: string,
+  airtime: string,
+  runtime: number,
+  show: {
+    id: number,
+    name: string,
+    summary: string,
+    network: {
+      id: number,
+      name: string
+    }
+  }
+};
+
 const formatListDateTime = (dateTime: string): string => {
   const dateTimeTokens: string[] = dateTime.split(' ');
   let date: string, time: string;
@@ -23,12 +38,19 @@ const formatListDateTime = (dateTime: string): string => {
   return `${date}, ${time}`;
 };
 
+const formatSummary = (summary: string) => {
+  const desc = summary;
+  const regex = /<[^>]*>/ig;
+  return desc.replace(regex, '');
+};
+
 const getShows = async () => {
-    const stationsUrl = `http://api.tvmaze.com/schedule?country=US&date=2021-04-07`;
+    let date = new Date().toISOString().slice(0, 10)
+    const stationsUrl = `http://api.tvmaze.com/schedule?country=US&date=${date}`;
     const response = await fetch(stationsUrl);
     const data = await response.json();
     return data
-    .map((obj: any) => {
+    .map((obj: Listing) => {
     return {
       stationId: obj?.show?.network?.id,
       stationName: obj?.show?.network?.name,
@@ -36,7 +58,7 @@ const getShows = async () => {
       showName: obj?.show?.name,
       airdate: formatListDateTime(`${obj?.airdate} ${obj?.airtime}`),
       runtime: `${obj?.runtime} minutes`,
-      summary: obj?.show?.summary
+      summary: formatSummary(obj?.show?.summary)
     }
   });
 };
@@ -51,7 +73,7 @@ router
   })
   .get("/shows", async (ctx) => {
     ctx.response.body = await getShows();
-    console.log('/stations', ctx.response.status);
+    console.log('/shows', ctx.response.status);
   })
 
 app.use(oakCors({ origin: "*" }),);
