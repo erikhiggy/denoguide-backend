@@ -2,24 +2,9 @@ import { Application, Router } from "https://deno.land/x/oak@v6.5.0/mod.ts";
 import { parse } from 'https://deno.land/std/flags/mod.ts';
 import { oakCors } from "https://deno.land/x/cors/mod.ts";
 
-const API_KEY = Deno.env.get("API_KEY");
-
 const { args } = Deno;
 const DEFAULT_PORT = 8000;
 const argPort = parse(args).port;
-
-type Station = {
-  callsign: string,
-  name: string,
-  stationID: number
-}
-
-type Show = {
-  name: string,
-  showName: string,
-  listDateTime: string,
-  description: string
-}
 
 const formatListDateTime = (dateTime: string): string => {
   const dateTimeTokens: string[] = dateTime.split(' ');
@@ -38,37 +23,20 @@ const formatListDateTime = (dateTime: string): string => {
   return `${date}, ${time}`;
 };
 
-const getShows = async (stationID: string) => {
-  const showsUrl = `https://api.tvmedia.ca/tv/v4/lineups/36617/listings?
-  api_key=${API_KEY}
-  &timezone=America%2FNew_York
-  &station=${stationID}
-  &newShowsOnly=true
-`
-  const response = await fetch(showsUrl);
-  const data = await response.json();
-  return data.map((obj: Show) => {
-    return {
-      name: obj.name,
-      showName: obj.showName,
-      listDateTime: formatListDateTime(obj.listDateTime),
-      description: obj.description,
-      stationID
-    }
-  });
-};
-
-const getStations = async () => {
-    const stationsUrl = `https://api.tvmedia.ca/tv/v4/lineups/36617?api_key=${API_KEY}`;
+const getShows = async () => {
+    const stationsUrl = `http://api.tvmaze.com/schedule?country=US&date=2021-04-07`;
     const response = await fetch(stationsUrl);
     const data = await response.json();
     return data
-    .stations
-    .map((obj: Station) => {
+    .map((obj: any) => {
     return {
-      callsign: obj.callsign,
-      name: obj.name,
-      stationID: obj.stationID
+      stationId: obj?.show?.network?.id,
+      stationName: obj?.show?.network?.name,
+      showId: obj?.show?.id,
+      showName: obj?.show?.name,
+      airdate: formatListDateTime(`${obj?.airdate} ${obj?.airtime}`),
+      runtime: `${obj?.runtime} minutes`,
+      summary: obj?.show?.summary
     }
   });
 };
@@ -81,14 +49,8 @@ router
     ctx.response.body = "base route";
     console.log('/', ctx.response.status);
   })
-  .get("/shows/:stationID", async (ctx) => {
-    if (ctx?.params?.stationID) {
-      ctx.response.body = await getShows(ctx.params.stationID);
-    }
-    console.log(`/shows/${ctx.params.stationID}`, ctx.response.status);
-  })
-  .get("/stations", async (ctx) => {
-    ctx.response.body = await getStations();
+  .get("/shows", async (ctx) => {
+    ctx.response.body = await getShows();
     console.log('/stations', ctx.response.status);
   })
 
