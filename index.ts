@@ -57,8 +57,9 @@ const formatSummary = (summary: string) => {
 };
 
 const getShows = async () => {
-    let date = new Date().toISOString().slice(0, 10)
-    const stationsUrl = `http://api.tvmaze.com/schedule?country=US&date=${date}`;
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
+    const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1).slice(0, 10);
+    const stationsUrl = `http://api.tvmaze.com/schedule?country=US&date=${localISOTime}`;
     const response = await fetch(stationsUrl);
     const data = await response.json();
     return data
