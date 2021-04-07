@@ -4,28 +4,38 @@ import { oakCors } from "https://deno.land/x/cors/mod.ts";
 
 const { args } = Deno;
 const DEFAULT_PORT = 8000;
+const START_TIME_HOURS = 17;
 const argPort = parse(args).port;
+
+const BLACKLISTED_STATIONS = [1035, 11];
 
 type Listing = {
   airdate: string,
   airtime: string,
   runtime: number,
+  summary: string,
   show: {
     id: number,
     name: string,
-    summary: string,
     network: {
       id: number,
       name: string
+    },
+    image: {
+      medium: string
     }
   }
+};
+
+const getHours = (time: string): number => {
+  return parseInt(time.split(':')[0]);
 };
 
 const formatListDateTime = (dateTime: string): string => {
   const dateTimeTokens: string[] = dateTime.split(' ');
   let date: string, time: string;
   [date, time] = dateTimeTokens;
-  const hours: number = parseInt(time.split(':')[0]);
+  const hours: number = getHours(time);
   const minutes: number = parseInt(time.split(':')[1]);
   const formattedHours: number = (hours > 12 || hours === 0) ? Math.abs(hours - 12) : hours;
   const formattedMinutes: string = minutes.toString().length === 1 ? minutes.toString() + '0' : minutes.toString();
@@ -39,9 +49,11 @@ const formatListDateTime = (dateTime: string): string => {
 };
 
 const formatSummary = (summary: string) => {
+  if (!summary) return null;
   const desc = summary;
   const regex = /<[^>]*>/ig;
-  return desc.replace(regex, '');
+  const stringWithoutTags = desc.replace(regex, '');
+  return stringWithoutTags.length > 144 ? `${stringWithoutTags.substring(0, 144)}...` : stringWithoutTags;
 };
 
 const getShows = async () => {
@@ -50,16 +62,21 @@ const getShows = async () => {
     const response = await fetch(stationsUrl);
     const data = await response.json();
     return data
-    .map((obj: Listing) => {
-    return {
-      stationId: obj?.show?.network?.id,
-      stationName: obj?.show?.network?.name,
-      showId: obj?.show?.id,
-      showName: obj?.show?.name,
-      airdate: formatListDateTime(`${obj?.airdate} ${obj?.airtime}`),
-      runtime: `${obj?.runtime} minutes`,
-      summary: formatSummary(obj?.show?.summary)
-    }
+      .filter((obj: Listing) => getHours(obj?.airtime) >= START_TIME_HOURS)
+      .filter((obj: Listing) =>
+        obj.show.network.id !== BLACKLISTED_STATIONS[0]
+        && obj.show.network.id !== BLACKLISTED_STATIONS[1])
+      .map((obj: Listing) => {
+      return {
+        stationId: obj?.show?.network?.id,
+        stationName: obj?.show?.network?.name,
+        showId: obj?.show?.id,
+        showName: obj?.show?.name,
+        airdate: formatListDateTime(`${obj?.airdate} ${obj?.airtime}`),
+        runtime: `${obj?.runtime} minutes`,
+        summary: formatSummary(obj?.summary),
+        imageUrl: obj?.show?.image?.medium
+      }
   });
 };
 
