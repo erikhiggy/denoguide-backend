@@ -56,29 +56,34 @@ const formatSummary = (summary: string) => {
   return stringWithoutTags.length > 144 ? `${stringWithoutTags.substring(0, 144)}...` : stringWithoutTags;
 };
 
-const getShows = async () => {
-    const tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
-    const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1).slice(0, 10);
-    const stationsUrl = `http://api.tvmaze.com/schedule?country=US&date=${localISOTime}`;
+const getShows = async (date: string) => {
+    const stationsUrl = `http://api.tvmaze.com/schedule?country=US&date=${date}`;
     const response = await fetch(stationsUrl);
     const data = await response.json();
-    return data
-      .filter((obj: Listing) => getHours(obj?.airtime) >= START_TIME_HOURS)
-      .filter((obj: Listing) =>
-        obj.show.network.id !== BLACKLISTED_STATIONS[0]
-        && obj.show.network.id !== BLACKLISTED_STATIONS[1])
-      .map((obj: Listing) => {
-      return {
-        stationId: obj?.show?.network?.id,
-        stationName: obj?.show?.network?.name,
-        showId: obj?.show?.id,
-        showName: obj?.show?.name,
-        airdate: formatListDateTime(`${obj?.airdate} ${obj?.airtime}`),
-        runtime: `${obj?.runtime} minutes`,
-        summary: formatSummary(obj?.summary),
-        imageUrl: obj?.show?.image?.medium
-      }
-  });
+    let mappedData = null;
+    try {
+      mappedData = data
+        .filter((obj: Listing) => getHours(obj?.airtime) >= START_TIME_HOURS)
+        .filter((obj: Listing) =>
+          obj?.show?.network?.id !== BLACKLISTED_STATIONS[0]
+          && obj?.show?.network?.id !== BLACKLISTED_STATIONS[1])
+        .map((obj: Listing) => {
+          return {
+            stationId: obj?.show?.network?.id,
+            stationName: obj?.show?.network?.name,
+            showId: obj?.show?.id,
+            showName: obj?.show?.name,
+            airdate: formatListDateTime(`${obj?.airdate} ${obj?.airtime}`),
+            runtime: `${obj?.runtime} minutes`,
+            summary: formatSummary(obj?.summary),
+            imageUrl: obj?.show?.image?.medium
+          };
+        });
+      return mappedData;
+    } catch (e) {
+      console.log('an error occurred mapping the data!');
+  }
+  return "Error: Mapping data error";
 };
 
 const app = new Application();
@@ -89,9 +94,13 @@ router
     ctx.response.body = "base route";
     console.log('/', ctx.response.status);
   })
-  .get("/shows", async (ctx) => {
-    ctx.response.body = await getShows();
-    console.log('/shows', ctx.response.status);
+  .get("/shows/:date", async (ctx) => {
+    const { date = "" } = ctx?.params;
+    ctx.response.body = await getShows(date);
+    if ((ctx.response.body || {}).toString().includes('Error')) {
+      ctx.response.status = 500;
+    }
+    console.log(`/shows/${date}`, ctx.response.status);
   })
 
 app.use(oakCors({ origin: "*" }),);
