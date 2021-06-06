@@ -14,6 +14,8 @@ type Listing = {
   airtime: string,
   runtime: number,
   summary: string,
+  season: number,
+  number: number,
   show: {
     id: number,
     name: string,
@@ -76,7 +78,9 @@ const getShows = async (date: string) => {
             airdate: formatListDateTime(`${obj?.airdate} ${obj?.airtime}`),
             runtime: `${obj?.runtime} minutes`,
             summary: formatSummary(obj?.summary),
-            imageUrl: obj?.show?.image?.medium
+            imageUrl: obj?.show?.image?.medium,
+            season: obj?.season,
+            episode: obj?.number
           };
         });
       return mappedData;
